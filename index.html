@@ -2224,25 +2224,27 @@ async function enviarMensaje(id){
     : '';
 
   try{
-    const res=await fetch('https://mundoaurum-api.consultaterapiaspepon.workers.dev',{
+    const res=await fetch('/api',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-5',
         max_tokens:1000,
         system: cfg.sistema + antiRepeat,
         messages: conversaciones[id]
       })
     });
     const data=await res.json();
-    const rawReply=data.content?.[0]?.text||'...';
+    console.log('API response:', JSON.stringify(data).substring(0,200));
+    const rawReply=data.content?.[0]?.text || (data.error ? 'Error: '+data.error.message : '...');
     // Check for redirect signal
     const redirectMatch = rawReply.match(/\[REDIRIGIR:(umbral|hueso|fuego|silencio|crisol)\]/);
     const cleanReply = rawReply.replace(/\[REDIRIGIR:[a-z]+\]/g,'').trim();
     conversaciones[id].push({role:'assistant',content:cleanReply});
     typeMessage(id, cleanReply, redirectMatch ? redirectMatch[1] : null);
   } catch(e){
-    typeMessage(id, 'El silencio también es una respuesta. Inténtalo de nuevo.');
+    console.error('Error:', e);
+    typeMessage(id, 'El silencio también es una respuesta. Inténtalo de nuevo. (Error: ' + e.message + ')');
   } finally{
     inp.disabled=false;
     document.querySelector(`#conv-${id} .conv-send`).disabled=false;
